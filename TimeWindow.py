@@ -130,3 +130,5 @@ plt.figure()
 pd.DataFrame(y, x).plot()
 plt.savefig('power.png', dpi=300)
 plt.show()
+
+# Testing on Linux

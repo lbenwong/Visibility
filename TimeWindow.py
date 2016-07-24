@@ -122,8 +122,8 @@ def data_manipulator(dataset_df):
 
 def linear_regression_func(train_feature, train_target, test_feature, test_target):
     regr = linear_model.LinearRegression()
-    regr.fit(train_feature[["R_1000_diff_1", "temp-dew_diff_1", "uv_10m_diff_1"]], train_target["visia_diff_1"])
-    return regr.predict(test_feature[["R_1000_diff_1", "temp-dew_diff_1", "uv_10m_diff_1"]]) \
+    regr.fit(train_feature[["R_1000_diff_1", "temp-dew_diff_1", "uv_10m"]], train_target["visia_diff_1"])
+    return regr.predict(test_feature[["R_1000_diff_1", "temp-dew_diff_1", "uv_10m"]]) \
            + test_target["visia_shift_1"]
 
 

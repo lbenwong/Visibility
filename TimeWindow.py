@@ -83,15 +83,16 @@ def main_function(dataset_df, test_window_int,
     train_window_list = []
     for window in xrange(30, 600+1):
         train_window_list.append(window)
-        f_eval = evaluation(dataset_df=dataset_clean_df,
-                            train_window_int=window,
-                            test_window_int=test_window_int,
-                            feature_col_list=feature_col_list,
-                            target_col_list=target_col_list,
-                            classifier_func=classifier_func,
-                            evaluator_func=evaluator_func)
+        f_eval, precision_eval, recall_eval = evaluation(dataset_df=dataset_clean_df,
+                                                         train_window_int=window,
+                                                         test_window_int=test_window_int,
+                                                         feature_col_list=feature_col_list,
+                                                         target_col_list=target_col_list,
+                                                         classifier_func=classifier_func,
+                                                         evaluator_func=evaluator_func)
         evaluation_list.append(f_eval)
-        print "The evaluation of window %s is done, F1 value is %s" % (window, f_eval)
+        print "The evaluation of window %s is done, F1 value is %s, Precision is %s, Recall is %s" \
+              % (window, f_eval, precision_eval, recall_eval)
     return train_window_list, evaluation_list
 
 
@@ -109,6 +110,7 @@ def data_manipulator(dataset_df):
     # Output: pandas dataframe
     dataset_df["visia_diff_1"] = dataset_df["visia"].diff(periods=1)
     dataset_df["visia_shift_1"] = dataset_df["visia"].shift(periods=1)
+    dataset_df["visia_low"] = dataset_df["visia"] < 3000
 
     dataset_df["R_1000_diff_1"] = dataset_df["R_1000"].diff(periods=1)
     dataset_df["temp-dew"] = dataset_df["temperature"]-dataset_df["dewtemp"]
@@ -117,18 +119,21 @@ def data_manipulator(dataset_df):
     return dataset_df[["R_1000", "R_1000_diff_1",
                        "temp-dew", "temp-dew_diff_1",
                        "uv_10m", "uv_10m_diff_1",
-                       "visia", "visia_diff_1", "visia_shift_1"]]
+                       "visia", "visia_diff_1", "visia_shift_1", "visia_low"]]
 
 
 def linear_regression_func(train_feature, train_target, test_feature, test_target):
     regr = linear_model.LinearRegression()
     regr.fit(train_feature[["R_1000_diff_1", "temp-dew_diff_1", "uv_10m"]], train_target["visia_diff_1"])
     return regr.predict(test_feature[["R_1000_diff_1", "temp-dew_diff_1", "uv_10m"]]) \
-           + test_target["visia_shift_1"]
+           + test_target["visia_shift_1"] < 3000
 
 
 def evaluation_func(actual_list, pred_list):
-    return metrics.r2_score([item["visia"] for item in actual_list], pred_list)
+    # return metrics.r2_score([item["low"] for item in actual_list], pred_list)
+    return metrics.f1_score([item["visia_low"] for item in actual_list], pred_list), \
+           metrics.precision_score([item["visia_low"] for item in actual_list], pred_list), \
+           metrics.recall_score([item["visia_low"] for item in actual_list], pred_list)
 
 x, y = main_function(dataset_df=visia_dataset,
                      test_window_int=1,
@@ -138,7 +143,7 @@ x, y = main_function(dataset_df=visia_dataset,
                      feature_col_list=["R_1000", "R_1000_diff_1",
                                        "temp-dew", "temp-dew_diff_1",
                                        "uv_10m", "uv_10m_diff_1"],
-                     target_col_list=["visia", "visia_diff_1", "visia_shift_1"])
+                     target_col_list=["visia", "visia_diff_1", "visia_shift_1", "visia_low"])
 
 
 plt.figure()

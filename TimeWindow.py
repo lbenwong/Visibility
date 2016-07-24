@@ -1,6 +1,7 @@
 import pandas as pd
-from sklearn.linear_model import LogisticRegression
+from sklearn import linear_model
 from sklearn import metrics
+
 import matplotlib.pyplot as plt
 
 import warnings
@@ -16,10 +17,10 @@ def dataset_cleaning(dataset_df):
     # Input: Pandas Dataframe
     # Output: Pandas Dataframe
     for column in dataset_df:
-        # try:
+        try:
             dataset_df[column].fillna(dataset_df[column].mean())
-        # except:
-            # pass
+        except:
+            pass
     return dataset_df
 
 
@@ -33,49 +34,50 @@ def data_slice_generator(dataset_df, train_window_int, test_window_int):
             yield dataset_df.ix[beginning_int:beginning_int+train_window_int-1+test_window_int, ].reset_index()
 
 
-def pred_value(dataset_slice_df, train_window_int, test_window_int, feature_col_list, target_col_str, classifier_func):
+def pred_value(dataset_slice_df, train_window_int, test_window_int, feature_col_list, target_col_list, classifier_func):
     # Generate single prediction value
     # Output:Bool
     train = dataset_slice_df.ix[:train_window_int-1, ]
-    target_train = train[target_col_str]
+    target_train = train[target_col_list]
     feature_train = train[feature_col_list]
 
-    feature_test = dataset_slice_df.ix[train_window_int+test_window_int-1, ]
-    feature_test = feature_test[feature_col_list]
+    test = dataset_slice_df.ix[train_window_int+test_window_int-1, ]
+    feature_test = test[feature_col_list]
+    target_test = test[target_col_list]
 
-    return classifier_func(feature_train, target_train, feature_test)
+    return classifier_func(feature_train, target_train, feature_test, target_test)
 
 
-def actual_value(dataset_slice_df, train_window_int, test_window_int, target_col_str):
+def actual_value(dataset_slice_df, train_window_int, test_window_int, target_col_list):
     # Generate single actual value
     # Output: Bool
-    return dataset_slice_df.ix[train_window_int+test_window_int-1, target_col_str]
+    return dataset_slice_df.ix[train_window_int+test_window_int-1, target_col_list]
 
 
 def evaluation(dataset_df,
                train_window_int, test_window_int,
-               feature_col_list, target_col_str,
+               feature_col_list, target_col_list,
                classifier_func, evaluator_func):
     # Generate the generalization ability score
     # Return int
     pred_list = []
     actual_list = []
     for item in data_slice_generator(dataset_df, train_window_int, test_window_int):
-        try:
+        #try:
             pred_list.append(pred_value(item,
                                         train_window_int, test_window_int,
-                                        feature_col_list, target_col_str,
+                                        feature_col_list, target_col_list,
                                         classifier_func))
-            actual_list.append(actual_value(item, train_window_int, test_window_int, target_col_str))
-        except ValueError:
-            pass
+            actual_list.append(actual_value(item, train_window_int, test_window_int, target_col_list))
+        #except ValueError:
+            #pass
     return evaluator_func(actual_list, pred_list)
 
 
 def main_function(dataset_df, test_window_int,
                   classifier_func, evaluator_func,
-                  data_manupilater, feature_col_list, target_col_str):
-    dataset_clean_df = data_manupilater(dataset_cleaning(dataset_df), target_col_str)
+                  data_manupilater, feature_col_list, target_col_list):
+    dataset_clean_df = data_manupilater(dataset_cleaning(dataset_df)).fillna(0)
 
     evaluation_list = []
     train_window_list = []
@@ -85,7 +87,7 @@ def main_function(dataset_df, test_window_int,
                             train_window_int=window,
                             test_window_int=test_window_int,
                             feature_col_list=feature_col_list,
-                            target_col_str=target_col_str,
+                            target_col_list=target_col_list,
                             classifier_func=classifier_func,
                             evaluator_func=evaluator_func)
         evaluation_list.append(f_eval)
@@ -103,28 +105,40 @@ visia_dataset = pd.read_csv("visia.csv")
 # 3rd: he evaluator function, which generate the score of generalization ability
 
 
-def data_manipulator(dataset_df, target_col_str):
+def data_manipulator(dataset_df):
     # Output: pandas dataframe
-    dataset_df[target_col_str] = dataset_df["visia"] < 3000
-    dataset_df["R_1000_exp"] = dataset_df["R_1000"].map(lambda var: var**1.5)
+    dataset_df["visia_diff_1"] = dataset_df["visia"].diff(periods=1)
+    dataset_df["visia_shift_1"] = dataset_df["visia"].shift(periods=1)
+
+    dataset_df["R_1000_diff_1"] = dataset_df["R_1000"].diff(periods=1)
     dataset_df["temp-dew"] = dataset_df["temperature"]-dataset_df["dewtemp"]
-    dataset_df["sun"] = dataset_df["time"] % 100-12
-    return dataset_df[["R_1000_exp", "temp-dew", "uv_10m", target_col_str]]
+    dataset_df["temp-dew_diff_1"] = dataset_df["temp-dew"].diff(periods=1)
+    dataset_df["uv_10m_diff_1"] = dataset_df["uv_10m"].diff(periods=1)
+    return dataset_df[["R_1000", "R_1000_diff_1",
+                       "temp-dew", "temp-dew_diff_1",
+                       "uv_10m", "uv_10m_diff_1",
+                       "visia", "visia_diff_1", "visia_shift_1"]]
 
 
-def clf_logitregression_func(train_feature, train_target, test_feature):
-    clf_logitregression = LogisticRegression()
-    clf_logitregression_model = clf_logitregression.fit(train_feature, train_target)
-    return clf_logitregression_model.predict(test_feature)
+def linear_regression_func(train_feature, train_target, test_feature, test_target):
+    regr = linear_model.LinearRegression()
+    regr.fit(train_feature[["R_1000_diff_1", "temp-dew_diff_1", "uv_10m_diff_1"]], train_target["visia_diff_1"])
+    return regr.predict(test_feature[["R_1000_diff_1", "temp-dew_diff_1", "uv_10m_diff_1"]]) \
+           + test_target["visia_shift_1"]
 
+
+def evaluation_func(actual_list, pred_list):
+    return metrics.r2_score([item["visia"] for item in actual_list], pred_list)
 
 x, y = main_function(dataset_df=visia_dataset,
                      test_window_int=1,
-                     classifier_func=clf_logitregression_func,
-                     evaluator_func=metrics.f1_score,
+                     classifier_func=linear_regression_func,
+                     evaluator_func=evaluation_func,
                      data_manupilater=data_manipulator,
-                     feature_col_list=["R_1000_exp", "temp-dew", "uv_10m"],
-                     target_col_str="low")
+                     feature_col_list=["R_1000", "R_1000_diff_1",
+                                       "temp-dew", "temp-dew_diff_1",
+                                       "uv_10m", "uv_10m_diff_1"],
+                     target_col_list=["visia", "visia_diff_1", "visia_shift_1"])
 
 
 plt.figure()

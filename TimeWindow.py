@@ -1,5 +1,6 @@
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
+from sklearn import metrics
 import matplotlib.pyplot as plt
 
 import warnings
@@ -28,14 +29,14 @@ def data_slice_generator(dataset_df, train_window_int, test_window_int):
     #        train_window_int: integer smaller than total observations
     #        test_window_int: integer smaller than total observations - train_window_int
     # Output: Pandas dataframe
-        for beginning_int in xrange(0,dataset_df.shape[0]-train_window_int-test_window_int+1):
-            yield dataset_df.ix[beginning_int:beginning_int+train_window_int-1+test_window_int,].reset_index()
+        for beginning_int in xrange(0, dataset_df.shape[0]-train_window_int-test_window_int+1):
+            yield dataset_df.ix[beginning_int:beginning_int+train_window_int-1+test_window_int, ].reset_index()
 
 
-def pred_value(dataset_slice_df, train_window_int, test_window_int,feature_col_list,target_col_str, classifier_func):
+def pred_value(dataset_slice_df, train_window_int, test_window_int, feature_col_list, target_col_str, classifier_func):
     # Generate single prediction value
     # Output:Bool
-    train=dataset_slice_df.ix[:train_window_int-1, ]
+    train = dataset_slice_df.ix[:train_window_int-1, ]
     target_train = train[target_col_str]
     feature_train = train[feature_col_list]
 
@@ -66,9 +67,9 @@ def evaluation(dataset_df,
                                         feature_col_list, target_col_str,
                                         classifier_func))
             actual_list.append(actual_value(item, train_window_int, test_window_int, target_col_str))
-        except:
+        except ValueError:
             pass
-    return evaluator_func(actual_list,pred_list)
+    return evaluator_func(actual_list, pred_list)
 
 
 def main_function(dataset_df, test_window_int,
@@ -113,10 +114,10 @@ def data_manipulator(dataset_df, target_col_str):
 
 def clf_logitregression_func(train_feature, train_target, test_feature):
     clf_logitregression = LogisticRegression()
-    clf_logitregression_model=clf_logitregression.fit(train_feature, train_target)
+    clf_logitregression_model = clf_logitregression.fit(train_feature, train_target)
     return clf_logitregression_model.predict(test_feature)
 
-from sklearn import metrics
+
 x, y = main_function(dataset_df=visia_dataset,
                      test_window_int=1,
                      classifier_func=clf_logitregression_func,

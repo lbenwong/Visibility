@@ -1,7 +1,8 @@
 import pandas as pd
 from sklearn import linear_model
+from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.ensemble import AdaBoostRegressor
 from sklearn import metrics
-
 import matplotlib.pyplot as plt
 
 import warnings
@@ -81,7 +82,7 @@ def main_function(dataset_df, test_window_int,
 
     evaluation_list = []
     train_window_list = []
-    for window in xrange(30, 600+1):
+    for window in xrange(100, 400+1):  # Changed at 29 Jul.
         train_window_list.append(window)
         f_eval, precision_eval, recall_eval = evaluation(dataset_df=dataset_clean_df,
                                                          train_window_int=window,
@@ -103,7 +104,7 @@ visia_dataset = pd.read_csv("visia.csv")
 # 3 Functions must be defined and delivered:
 # 1st: the dataset manipulator function, which define target and feature variables
 # 2nd: the classifier function, which returns the predict value
-# 3rd: he evaluator function, which generate the score of generalization ability
+# 3rd: the evaluator function, which generate the score of generalization ability
 
 
 def data_manipulator(dataset_df):
@@ -116,7 +117,11 @@ def data_manipulator(dataset_df):
     dataset_df["temp-dew"] = dataset_df["temperature"]-dataset_df["dewtemp"]
     dataset_df["temp-dew_diff_1"] = dataset_df["temp-dew"].diff(periods=1)
     dataset_df["uv_10m_diff_1"] = dataset_df["uv_10m"].diff(periods=1)
-    return dataset_df[["R_1000", "R_1000_diff_1",
+    return dataset_df[["MSL",
+                       "Q_1000", "Q_850", "Q_925",
+                       "R_1000", "R_850", "R_925",
+                       "T_1000", "T_925", "T_850",
+                       "R_1000_diff_1",
                        "temp-dew", "temp-dew_diff_1",
                        "uv_10m", "uv_10m_diff_1",
                        "visia", "visia_diff_1", "visia_shift_1", "visia_low"]]
@@ -125,8 +130,29 @@ def data_manipulator(dataset_df):
 def linear_regression_func(train_feature, train_target, test_feature, test_target):
     regr = linear_model.LinearRegression()
     regr.fit(train_feature[["R_1000_diff_1", "temp-dew_diff_1", "uv_10m"]], train_target["visia_diff_1"])
-    return regr.predict(test_feature[["R_1000_diff_1", "temp-dew_diff_1", "uv_10m"]]) \
-           + test_target["visia_shift_1"] < 3000
+    return (regr.predict(test_feature[["R_1000_diff_1", "temp-dew_diff_1", "uv_10m"]])
+           + test_target["visia_shift_1"]) < 3000
+
+
+def gbdt_func(train_feature, train_target, test_feature, test_target):
+    regr = GradientBoostingRegressor(n_estimators=100,
+                                     learning_rate=0.05,
+                                     max_depth=1,
+                                     random_state=0,
+                                     loss='ls')
+    regr.fit(train_feature[["R_1000_diff_1", "temp-dew_diff_1", "uv_10m"]],
+             train_target["visia_diff_1"])
+    return (regr.predict(test_feature[["R_1000_diff_1", "temp-dew_diff_1", "uv_10m"]])
+           + test_target["visia_shift_1"]) < 3000
+
+
+def adaboost_linearregression_func(train_feature, train_target, test_feature, test_target):
+    regr = linear_model.LinearRegression()
+    adaboost_regr = AdaBoostRegressor(regr, n_estimators=100, learning_rate=0.05, loss='exponential')
+    adaboost_regr.fit(train_feature[["R_1000_diff_1", "temp-dew_diff_1", "uv_10m"]],
+                      train_target["visia_diff_1"])
+    return (adaboost_regr.predict(test_feature[["R_1000_diff_1", "temp-dew_diff_1", "uv_10m"]])
+           + test_target["visia_shift_1"]) < 3000
 
 
 def evaluation_func(actual_list, pred_list):
@@ -137,10 +163,14 @@ def evaluation_func(actual_list, pred_list):
 
 x, y = main_function(dataset_df=visia_dataset,
                      test_window_int=1,
-                     classifier_func=linear_regression_func,
+                     classifier_func=adaboost_linearregression_func,
                      evaluator_func=evaluation_func,
                      data_manupilater=data_manipulator,
-                     feature_col_list=["R_1000", "R_1000_diff_1",
+                     feature_col_list=["MSL",
+                                       "Q_1000", "Q_850", "Q_925",
+                                       "R_1000", "R_850", "R_925",
+                                       "T_1000", "T_925", "T_850",
+                                       "R_1000", "R_1000_diff_1",
                                        "temp-dew", "temp-dew_diff_1",
                                        "uv_10m", "uv_10m_diff_1"],
                      target_col_list=["visia", "visia_diff_1", "visia_shift_1", "visia_low"])

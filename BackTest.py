@@ -63,6 +63,8 @@ class BackTest(object):
         return self._test.ix[self._target_col][0]
 
     def make_prediction(self, train_window_int, test_window_int):
+        self._prediction = []
+        self._actual = []
         for item in self._generate_data_slice(train_window_int, test_window_int):
             try:
                 self._separate_train_test(item, train_window_int, test_window_int)

@@ -57,7 +57,7 @@ class BackTest(object):
         self._test = dataset_slice_df.ix[train_window_int+test_window_int - 1, ]
 
     def _get_prediction(self):
-        return self._forecaster(self._train, self._test)
+        return self._forecaster(self._train, self._test)[0]
 
     def _get_actual_value(self):
         return self._test.ix[self._target_col][0]

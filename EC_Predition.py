@@ -52,13 +52,14 @@ def linear_regression_func(train, test):
     regr = linear_model.LinearRegression()
     regr.fit(train[["R_1000_diff_1", "temp-dew_diff_1", "uv_10m"]], train["visia_diff_1"])
     return (regr.predict(test[["R_1000_diff_1", "temp-dew_diff_1", "uv_10m"]]) + test["visia_shift_1"]) < 3000
+    # return test["visia_shift_1"] < 3000
 
 # Loading and Execution.
-EC_DataSet = pd.read_csv("visia.csv")
+EC_DataSet = pd.read_csv("Data/visia.csv")
 linear_regression_gt = BackTest.BackTestGoThrough(
     dataset_df=data_manipulator(EC_DataSet),
     target_col_list=["visia_low"],
     forecast_func=linear_regression_func)
 
 linear_regression_gt.make_go_through_prediction(min_window=30, max_window=500)\
-                   .evaluation_chart()
+                   .evaluation_chart(filename="EC_Score")

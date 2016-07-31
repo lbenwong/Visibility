@@ -57,7 +57,7 @@ linear_regresion_gt = BackTest.BackTestGoThrough(
     target_col_list=["visia_low"],
     forecast_func=linear_regression_func)
 
-linear_regresion_gt.make_go_through_prediction()
+linear_regresion_gt.make_go_through_prediction(min_window=100, max_window=400)
 x = linear_regresion_gt.get_train_window()
 y = linear_regresion_gt.get_f()
 

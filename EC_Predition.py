@@ -5,7 +5,6 @@ Author: Ben Wang (lbenwong@live.cn)
 """
 
 import pandas as pd
-import matplotlib.pyplot as plt
 import BackTest
 
 from sklearn import linear_model
@@ -61,5 +60,5 @@ linear_regression_gt = BackTest.BackTestGoThrough(
     target_col_list=["visia_low"],
     forecast_func=linear_regression_func)
 
-linear_regression_gt.make_go_through_prediction(min_window=30, max_window=500)\
+linear_regression_gt.make_go_through_prediction(min_window=100, max_window=500)\
                    .evaluation_chart(filename="EC_Score")

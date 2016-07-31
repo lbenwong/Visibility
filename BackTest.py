@@ -5,6 +5,7 @@ Author: Ben Wang (lbenwong@live.cn)
 """
 
 from sklearn import metrics
+import matplotlib.pylab as plt
 
 
 def _default_evaluation(prediction_list, actual_list):
@@ -126,3 +127,15 @@ class BackTestGoThrough(BackTest):
 
     def get_recall(self):
         return self._recall_list
+
+    def evaluation_chart(self, save=1, filename="Score.png", dpi=300):
+        plt.figure()
+        plt.plot(self._train_window_list, self._f_list, label="F Value", color="red")
+        plt.plot(self._train_window_list, self._precision_list, label="Precision", color="green")
+        plt.plot(self._train_window_list, self._recall_list, label="recall", color="blue")
+        plt.xlabel("Length of Window")
+        plt.ylabel("Score")
+        plt.title("Red: F-Value; Green: Precision; Blue: Recall")
+        if save == 1:
+            plt.savefig(filename, dpi=dpi)
+        plt.show()

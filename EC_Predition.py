@@ -9,8 +9,6 @@ import matplotlib.pyplot as plt
 import BackTest
 
 from sklearn import linear_model
-from sklearn.ensemble import GradientBoostingRegressor
-from sklearn.ensemble import AdaBoostRegressor
 
 import warnings
 
@@ -22,7 +20,8 @@ warnings.warn = warn
 
 def data_manipulator(dataset_df):
     # Description: construct feature and clean data
-    # Output: pandas dataframe
+    # Input: pandas data frame
+    # Output: pandas data frame
     dataset_df["visia_diff_1"] = dataset_df["visia"].diff(periods=1)
     dataset_df["visia_shift_1"] = dataset_df["visia"].shift(periods=1)
     dataset_df["visia_low"] = dataset_df["visia"] < 3000
@@ -47,21 +46,19 @@ def data_manipulator(dataset_df):
 
 
 def linear_regression_func(train, test):
+    # Description: The core modelling module
+    # input: pandas data frame split into train set and test set
+    # output: single test result
     regr = linear_model.LinearRegression()
     regr.fit(train[["R_1000_diff_1", "temp-dew_diff_1", "uv_10m"]], train["visia_diff_1"])
     return (regr.predict(test[["R_1000_diff_1", "temp-dew_diff_1", "uv_10m"]]) + test["visia_shift_1"]) < 3000
 
+# Loading and Execution.
 EC_DataSet = pd.read_csv("visia.csv")
-linear_regresion_gt = BackTest.BackTestGoThrough(
+linear_regression_gt = BackTest.BackTestGoThrough(
     dataset_df=data_manipulator(EC_DataSet),
     target_col_list=["visia_low"],
     forecast_func=linear_regression_func)
 
-linear_regresion_gt.make_go_through_prediction(min_window=100, max_window=400)
-x = linear_regresion_gt.get_train_window()
-y = linear_regresion_gt.get_f()
-
-plt.figure()
-pd.DataFrame(y, x).plot()
-plt.savefig('power.png', dpi=300)
-plt.show()
+linear_regression_gt.make_go_through_prediction(min_window=30, max_window=500)\
+                   .evaluation_chart()

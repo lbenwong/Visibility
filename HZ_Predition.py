@@ -52,7 +52,7 @@ def classifier_func(train, test):
     regr = linear_model.LinearRegression()
     regr.fit(train[["RelHumidity_diff_1", "Temp-DewTemp_diff_1", "WindVelocity_diff_1"]], train["VisiA_diff_1"])
     return (regr.predict(test[["RelHumidity_diff_1", "Temp-DewTemp_diff_1", "WindVelocity_diff_1"]])
-            + test["VisiA_diff_1"]) < 3000
+            + test["VisiA_shift_1"]) < 3000
 
 
 DataSet = pd.read_csv("Data/HZ_2015.csv")

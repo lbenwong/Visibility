@@ -8,10 +8,10 @@ from sklearn import metrics
 import matplotlib.pylab as plt
 
 
-def _default_evaluation(prediction_list, actual_list):
-    return metrics.f1_score(prediction_list, actual_list), \
-           metrics.precision_score(prediction_list, actual_list), \
-           metrics.recall_score(prediction_list, actual_list)
+def _default_evaluation(actual_list, prediction_list):
+    return metrics.f1_score(y_true=actual_list, y_pred=prediction_list), \
+           metrics.precision_score(y_true=actual_list, y_pred=prediction_list), \
+           metrics.recall_score(y_true=actual_list, y_pred=prediction_list)
 
 
 class BackTest(object):
@@ -79,7 +79,7 @@ class BackTest(object):
         return self._actual
 
     def get_evaluation(self):
-        return self._evaluator(self._prediction, self._actual)
+        return self._evaluator(self._actual, self._prediction)
 
 
 class BackTestGoThrough(BackTest):

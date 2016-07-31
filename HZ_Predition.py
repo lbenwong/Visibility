@@ -62,5 +62,5 @@ Model_BackTest = BackTest.BackTestGoThrough(
     forecast_func=classifier_func)
 
 Model_BackTest.make_go_through_prediction(min_window=30, max_window=1000) \
-              .evaluation_chart()
+              .evaluation_chart(filename="HZ_Score")
 

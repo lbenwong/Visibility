@@ -19,21 +19,48 @@ warnings.warn = warn
 def data_manipulator(dataset_df):
     # Description: construct feature and clean data
     # Output: pandas dataframe
-    # TODO
-    pass
+    dataset_df["VisiA_diff_1"] = dataset_df["VisiA"].diff(periods=1)
+    dataset_df["VisiA_shift_1"] = dataset_df["VisiA"].shift(periods=1)
+    dataset_df["VisiA_low"] = dataset_df["VisiA"] < 3000
+
+    dataset_df["RelHumidity_diff_1"] = dataset_df["RelHumidity"].diff(periods=1)
+    dataset_df["Temp-DewTemp"] = dataset_df["SurfaceTemp"] - dataset_df["DewTemp"]
+    dataset_df["Temp-DewTemp_diff_1"] = dataset_df["Temp-DewTemp"].diff(periods=1)
+    dataset_df["WindVelocity_diff_1"] = dataset_df["WindVelocity"].diff(periods=1)
+
+    dataset_df = dataset_df[["RelHumidity", "RelHumidity_diff_1",
+                             "Temp-DewTemp", "Temp-DewTemp_diff_1",
+                             "WindVelocity", "WindVelocity_diff_1",
+                             "VisiA", "VisiA_diff_1",
+                             "VisiA_shift_1", "VisiA_low"]]
+
+    for column in dataset_df:
+        dataset_df[column].fillna(dataset_df[column].mean())
+    dataset_df = dataset_df.fillna(0)
+
+    return dataset_df[["RelHumidity", "RelHumidity_diff_1",
+                       "Temp-DewTemp", "Temp-DewTemp_diff_1",
+                       "WindVelocity", "WindVelocity_diff_1",
+                       "VisiA", "VisiA_diff_1",
+                       "VisiA_shift_1", "VisiA_low"]]
 
 
 def classifier_func(train, test):
-    # TODO
-    pass
+    # Description: The core modelling module
+    # input: pandas data frame split into train set and test set
+    # output: single test result
+    regr = linear_model.LinearRegression()
+    regr.fit(train[["RelHumidity_diff_1", "Temp-DewTemp_diff_1", "WindVelocity_diff_1"]], train["VisiA_diff_1"])
+    return (regr.predict(test[["RelHumidity_diff_1", "Temp-DewTemp_diff_1", "WindVelocity_diff_1"]])
+            + test["VisiA_diff_1"]) < 3000
 
 
-DataSet = pd.read_csv("HZ_2015.csv")
+DataSet = pd.read_csv("Data/HZ_2015.csv")
 Model_BackTest = BackTest.BackTestGoThrough(
     dataset_df=data_manipulator(DataSet),
-    target_col_list=[],  # TODO
+    target_col_list=["VisiA_low"],
     forecast_func=classifier_func)
 
-Model_BackTest.make_go_through_prediction(min_window=30, max_window=500) \
+Model_BackTest.make_go_through_prediction(min_window=30, max_window=1000) \
               .evaluation_chart()
 

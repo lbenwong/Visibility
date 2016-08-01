@@ -48,6 +48,8 @@ class BackTest(object):
         self._prediction = []
         self._actual = []
 
+        self._test_period_int = 1
+
     def _generate_data_slice(self, train_window_int, test_window_int):
         for beginning_int in xrange(0, self._dataset.shape[0] - train_window_int - test_window_int + 1):
             yield self._dataset.ix[beginning_int:beginning_int + train_window_int - 1 + test_window_int, ].reset_index()
@@ -79,10 +81,12 @@ class BackTest(object):
         return self._prediction
 
     def get_actual_list(self):
-        return self._actual
+        real = [x.ix[self._test_period_int - 1] for x in self._actual]
+        return real
 
     def get_evaluation(self):
-        return self._evaluator(self._actual, self._prediction)
+        real = [x.ix[self._test_period_int - 1] for x in self._actual]
+        return self._evaluator(real, self._prediction)
 
 
 class BackTestGoThrough(BackTest):
@@ -106,8 +110,10 @@ class BackTestGoThrough(BackTest):
         self._precision_list = []
         self._recall_list = []
         self._train_window_list = []
+        self._test_period_int = 1
 
     def make_go_through_prediction(self, min_window=100, max_window=400, test_period_int=1):
+        self._test_period_int = test_period_int
         for window in xrange(min_window, max_window + 1):
             self.make_prediction(window, test_period_int)
             f_eval, precision_eval, recall_eval = self.get_evaluation()

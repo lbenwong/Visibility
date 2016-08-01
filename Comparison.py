@@ -66,7 +66,6 @@ linear_regression_gt = BackTest.BackTest(
 linear_regression_gt.make_prediction(train_window_int=300, test_window_int=3)
 pred = linear_regression_gt.get_prediction_list()
 real = linear_regression_gt.get_actual_list()
-real = [x.ix[2] for x in real]
 
 
 # Loading and Execution.

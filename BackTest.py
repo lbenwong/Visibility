@@ -54,13 +54,14 @@ class BackTest(object):
 
     def _separate_train_test(self, dataset_slice_df, train_window_int, test_window_int):
         self._train = dataset_slice_df.ix[:train_window_int - 1, ]
-        self._test = dataset_slice_df.ix[train_window_int + 1 - 1 : train_window_int+test_window_int - 1, ]
+        self._test = dataset_slice_df.ix[train_window_int + 1 - 1: train_window_int+test_window_int - 1, ]
 
     def _get_prediction(self):
-        return self._forecaster(self._train, self._test)[0]
+        return self._forecaster(self._train, self._test)
 
     def _get_actual_value(self):
-        return self._test.ix[self._target_col][0]
+        value = self._test[self._target_col].reset_index()[self._target_col]
+        return value
 
     def make_prediction(self, train_window_int, test_window_int):
         self._prediction = []

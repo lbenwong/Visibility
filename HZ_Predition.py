@@ -51,8 +51,9 @@ def classifier_func(train, test):
     # output: single test result
     regr = linear_model.LinearRegression()
     regr.fit(train[["RelHumidity_diff_1", "Temp-DewTemp_diff_1", "WindVelocity_diff_1"]], train["VisiA_diff_1"])
-    return (regr.predict(test[["RelHumidity_diff_1", "Temp-DewTemp_diff_1", "WindVelocity_diff_1"]])
-            + test["VisiA_shift_1"]) < 3000
+    result = regr.predict(test[["RelHumidity_diff_1", "Temp-DewTemp_diff_1", "WindVelocity_diff_1"]])
+    base = test["VisiA_shift_1"].reset_index()["VisiA_shift_1"]
+    return (base[0] + result[0] + result[1] + result[2]) < 3000
 
 
 DataSet = pd.read_csv("Data/HZ_2015.csv")
@@ -61,6 +62,6 @@ Model_BackTest = BackTest.BackTestGoThrough(
     target_col_list=["VisiA_low"],
     forecast_func=classifier_func)
 
-Model_BackTest.make_go_through_prediction(min_window=30, max_window=1000) \
-              .evaluation_chart(filename="HZ_Score")
+Model_BackTest.make_go_through_prediction(min_window=30, max_window=1000, test_period_int=3) \
+              .evaluation_chart(filename="HZ_Score (Predict 3)")
 

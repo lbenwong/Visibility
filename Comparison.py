@@ -53,7 +53,7 @@ def linear_regression_func(train, test):
     regr.fit(train[["R_1000_diff_1", "temp-dew_diff_1", "uv_10m"]], train["visia_diff_1"])
     result = regr.predict(test[["R_1000_diff_1", "temp-dew_diff_1", "uv_10m"]])
     base = test["visia_shift_1"].reset_index()["visia_shift_1"]
-    return base[0] + result[0] # + result[1] + result[2]
+    return base[0] + result[0] + result[1] + result[2]
     # return test["visia_shift_1"] < 3000
 
 # Loading and Execution.
@@ -63,16 +63,31 @@ linear_regression_gt = BackTest.BackTest(
     target_col_list=["visia"],
     forecast_func=linear_regression_func)
 
-linear_regression_gt.make_prediction(train_window_int=300, test_window_int=2)
+linear_regression_gt.make_prediction(train_window_int=300, test_window_int=3)
 pred = linear_regression_gt.get_prediction_list()
 real = linear_regression_gt.get_actual_list()
-real = [x.ix[0] for x in real]
+real = [x.ix[2] for x in real]
+
+
+# Loading and Execution.
+def base_func(train, test):
+    base = test["visia_shift_1"].reset_index()["visia_shift_1"]
+    return base[0]
+
+base_gt = BackTest.BackTest(
+    dataset_df=data_manipulator(EC_DataSet),
+    target_col_list=["visia"],
+    forecast_func=base_func)
+
+base_gt.make_prediction(train_window_int=300, test_window_int=3)
+base_pred = base_gt.get_prediction_list()
 
 plt.figure()
 plt.plot(pred, color="blue")
 plt.plot(real, color="red")
-plt.title("Blue: Prediction; Red: Real (Predict 1)")
-plt.xlabel("Visibility")
-plt.ylabel("Period")
+plt.plot(base_pred, color="green")
+plt.title("Blue: Prediction; Red: Real; Green: Shift (Predict 3)")
+plt.ylabel("Visibility")
+plt.xlabel("Period")
 plt.ylim([0, 25000])
 plt.show()

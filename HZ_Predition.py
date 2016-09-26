@@ -65,3 +65,4 @@ Model_BackTest = BackTest.BackTestGoThrough(
 Model_BackTest.make_go_through_prediction(min_window=30, max_window=1000, test_period_int=3) \
               .evaluation_chart(filename="HZ_Score (Predict 3)")
 
+# Ubuntu GUI Test
